@@ -26,7 +26,25 @@ function getRandomPokemonId() {
 
 // retrieve pokmon data for that number
 // retrieve the image url from the pokemon data
-async function getPokemonPictureUrl(targetId = getRandomPokemonId()) {}
+async function getPokemonPictureUrl(targetId = getRandomPokemonId()) {
+	// Retieve the API data
+	let response = await fetch(
+		`https://pokeapi.co/api/v2/pokemon/${targetId}`
+	).catch((error) => {
+		throw new Error("API failure");
+	});
+
+	if (response.status == "404") {
+		throw new Error("API did not have data for the requested ID.");
+	}
+
+	// Convert reponse into usable JSON
+	let data = await response.json().catch((error) => {
+		throw new Error("API did not return valid JSON");
+	});
+
+	let imageUrl = data.sprites.other["official-artwork"].front_default;
+}
 
 // download the image and save it to computer
 // return the download image's file path
