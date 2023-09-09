@@ -1,20 +1,22 @@
-// syncrhonous library foir download file IO
-// check if directory exists
+// Sychronous library for doing file IO
+// Check if directory exists
 const fs = require("node:fs");
 
-// Asyncrhonous, making a directory can take time
+// Asynchronous, making a directory can take time
 // but we do want to wait for this to finish
 const { mkdir } = require("node:fs/promises");
 
 // Streaming data, safer than traditional file saving/downloading/etc
-// this is syncrhonous, so we wait and it IS blocking
-const { readable } = require("node:stream");
+// This is synchronous, so we wait and it IS blocking
+const { Readable } = require("node:stream");
 
-// Wait for streaming to finish, this can take time but should be a promise
-// but shouldnt be blokcing so it is a promise instead of async
+// Wait for streaming to finish, this can take time so it should be a promise
+// but shouldn't be blocking, so it's a promise instead of async
 const { finished } = require("node:stream/promises");
 
-// Node file and direcotry path helper system
+// Node file & directory path helper system
+// /folder/folder/filename.png
+// \folder\folder\filename.png
 const path = require("node:path");
 
 function downloadPokemonPicture(targetId = getRandomPokemonId()) {
@@ -23,10 +25,12 @@ function downloadPokemonPicture(targetId = getRandomPokemonId()) {
 			// Step 1: get the image URL
 			let newUrl = await getPokemonPictureUrl(targetId);
 
+			let pokemonName = await getPokemonName(targetId);
+
 			// Step 2: do the download
 			let savedFileLocation = await savePokemonPictureToDisk(
 				newUrl,
-				"ExampleImage.png",
+				`Image-${targetId}.png`,
 				"storage"
 			);
 			// return savedFileLocation;
@@ -42,56 +46,71 @@ function getRandomPokemonId() {
 	return Math.floor(Math.random() * 1010) + 1;
 }
 
-// retrieve pokmon data for that number
-// retrieve the image url from the pokemon data
+// Retrieve Pokemon data for that number
+// Retrieve the image URL from that Pokemon data
 async function getPokemonPictureUrl(targetId = getRandomPokemonId()) {
-	// Retieve the API data
+	// Retrieve the API data
 	let response = await fetch(
-		`https://pokeapi.co/api/v2/pokemon/${targetId}`
+		"https://pokeapi.co/api/v2/pokemon/" + targetId
 	).catch((error) => {
-		throw new Error("API failure");
+		throw new Error("API failure.");
 	});
 
 	if (response.status == "404") {
 		throw new Error("API did not have data for the requested ID.");
 	}
 
-	// Convert reponse into usable JSON
+	// Convert the response into usable JSON
 	let data = await response.json().catch((error) => {
-		throw new Error("API did not return valid JSON");
+		throw new Error("API did not return valid JSON.");
 	});
 
-	let imageUrl = data.sprites.other["official-artwork"].front_default;
+	// Not optimised, it makes unnecessary variables
+	// let imageUrl = data.sprites.other["official-artwork"].front_default;
+	// return imageUrl;
+
+	// More-optimised, no extra junk variables
+	return data.sprites.other["official-artwork"].front_default;
 }
 
-// download the image and save it to computer
-// return the download image's file path
+// Download that image and save it to the computer
+// Return the downloaded image's file path
 async function savePokemonPictureToDisk(
 	targetUrl,
 	targetDownloadFilename,
 	targetDownloadDirectory = "."
 ) {
+	// Fetch request to the image URL
 	let imageData = await fetch(targetUrl).catch((error) => {
-		throw new Error("Image failed to download");
+		throw new Error("Image failed to download.");
 	});
 
+	// Check if target directory exists
 	if (!fs.existsSync(targetDownloadDirectory)) {
+		// Make a directory if we need to
 		await mkdir(targetDownloadDirectory);
 	}
 
+	// Create a JS-friendly file path
 	let fullFileDestination = path.join(
 		targetDownloadDirectory,
 		targetDownloadFilename
 	);
+	// someFolder, CoolPokemon.png
+	// /someFolder/CoolPokemon.png
+	// \someFolder\CoolPokemon.png
 
+	// Stream the image from the fetch to the computer
 	let fileDownloadStream = fs.createWriteStream(fullFileDestination);
 
-	await finished(Readable.fromWeb(imageData.body))
-		.pipe(fileDownloadStream)
-		.catch((error) => {
-			throw new Error("Image failed to save to disk");
-		});
+	//    get data as bytes from the web request --- pipe the bytes into the hard drive
+	await finished(
+		Readable.fromWeb(imageData.body).pipe(fileDownloadStream)
+	).catch((error) => {
+		throw new Error("Failed to save content to disk.");
+	});
 
+	// Return the saved image location
 	return fullFileDestination;
 }
 

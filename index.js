@@ -8,8 +8,8 @@ downloadPokemonPicture()
 		console.log(error);
 	});
 
-async function exampleDownload() {
-	let savedFileOutput = await downloadPokemonPicture();
-	console.log("New image is async saved to: " + savedFileOutput);
-}
-exampleDownload();
+// async function exampleDownload() {
+// 	let savedFileOutput = await downloadPokemonPicture();
+// 	console.log("New image is async saved to: " + savedFileOutput);
+// }
+// exampleDownload();
