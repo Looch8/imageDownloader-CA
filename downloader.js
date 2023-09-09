@@ -73,6 +73,8 @@ async function savePokemonPictureToDisk(
 		.catch((error) => {
 			throw new Error("Image failed to save to disk");
 		});
+
+	return fullFileDestination;
 }
 
 module.exports = {
