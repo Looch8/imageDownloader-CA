@@ -52,7 +52,28 @@ async function savePokemonPictureToDisk(
 	targetUrl,
 	targetDownloadFilename,
 	targetDownloadDirectory = "."
-) {}
+) {
+	let imageData = await fetch(targetUrl).catch((error) => {
+		throw new Error("Image failed to download");
+	});
+
+	if (!fs.existsSync(targetDownloadDirectory)) {
+		await mkdir(targetDownloadDirectory);
+	}
+
+	let fullFileDestination = path.join(
+		targetDownloadDirectory,
+		targetDownloadFilename
+	);
+
+	let fileDownloadStream = fs.createWriteStream(fullFileDestination);
+
+	await finished(Readable.fromWeb(imageData.body))
+		.pipe(fileDownloadStream)
+		.catch((error) => {
+			throw new Error("Image failed to save to disk");
+		});
+}
 
 module.exports = {
 	downloadPokemonPicture,
